@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 import requests
 
 
@@ -10,7 +9,7 @@ import requests
 # ============================================================
 
 st.set_page_config(
-    page_title="F1 2025 | Racing Analytics",
+    page_title="F1 2025 Analytics Dashboard",
     page_icon="🏎️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -18,456 +17,70 @@ st.set_page_config(
 
 
 # ============================================================
-# F1 COLOR PALETTE
-# ============================================================
-
-F1_RED = "#E10600"
-F1_RED_DARK = "#A30000"
-F1_BLACK = "#080808"
-F1_DARK = "#111111"
-F1_CARD = "#181818"
-F1_GREY = "#A7A7A7"
-F1_WHITE = "#FFFFFF"
-F1_GREEN = "#00D084"
-F1_YELLOW = "#FFD700"
-
-
-# ============================================================
 # CUSTOM CSS
 # ============================================================
 
+st.markdown("""
+<style>
+
+.stApp {
+    background-color: #f5f7fa;
+}
+
+.block-container {
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+}
+
+.main-title {
+    text-align: center;
+    font-size: 42px;
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #6c757d;
+    font-size: 18px;
+    margin-bottom: 30px;
+}
+
+.kpi-card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.kpi-title {
+    color: #6c757d;
+    font-size: 15px;
+}
+
+.kpi-value {
+    font-size: 30px;
+    font-weight: 700;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+
+# ============================================================
+# HEADER
+# ============================================================
+
 st.markdown(
-    f"""
-    <style>
-
-    /* ======================================================
-       GLOBAL
-       ====================================================== */
-
-    .stApp {{
-        background:
-            radial-gradient(
-                circle at 10% 10%,
-                rgba(225, 6, 0, 0.18),
-                transparent 30%
-            ),
-            radial-gradient(
-                circle at 90% 80%,
-                rgba(225, 6, 0, 0.10),
-                transparent 30%
-            ),
-            linear-gradient(
-                135deg,
-                #050505 0%,
-                #0b0b0b 45%,
-                #151515 100%
-            );
-
-        color: white;
-    }}
-
-    /* Carbon-fiber effect */
-
-    .stApp::before {{
-        content: "";
-        position: fixed;
-        inset: 0;
-
-        background-image:
-            linear-gradient(
-                45deg,
-                rgba(255,255,255,0.025) 25%,
-                transparent 25%
-            ),
-            linear-gradient(
-                -45deg,
-                rgba(255,255,255,0.025) 25%,
-                transparent 25%
-            );
-
-        background-size: 8px 8px;
-
-        pointer-events: none;
-
-        z-index: 0;
-    }}
-
-    .block-container {{
-        padding-top: 1.5rem;
-        padding-bottom: 3rem;
-        max-width: 1500px;
-    }}
-
-
-    /* ======================================================
-       HEADER
-       ====================================================== */
-
-    .hero {{
-        background:
-            linear-gradient(
-                135deg,
-                rgba(225,6,0,0.95),
-                rgba(120,0,0,0.92)
-            );
-
-        border-radius: 22px;
-
-        padding: 35px 40px;
-
-        margin-bottom: 25px;
-
-        box-shadow:
-            0 15px 40px rgba(0,0,0,0.45);
-
-        border:
-            1px solid rgba(255,255,255,0.12);
-
-        position: relative;
-
-        overflow: hidden;
-    }}
-
-    .hero::after {{
-        content: "🏎️";
-
-        position: absolute;
-
-        right: 35px;
-        bottom: -20px;
-
-        font-size: 130px;
-
-        opacity: 0.12;
-
-        transform: rotate(-5deg);
-    }}
-
-    .hero-title {{
-        font-size: 48px;
-        font-weight: 900;
-
-        letter-spacing: -1px;
-
-        margin: 0;
-
-        color: white;
-    }}
-
-    .hero-subtitle {{
-        font-size: 17px;
-
-        margin-top: 8px;
-
-        color: rgba(255,255,255,0.82);
-    }}
-
-    .season-badge {{
-        display: inline-block;
-
-        margin-top: 15px;
-
-        padding: 7px 16px;
-
-        border-radius: 30px;
-
-        background: rgba(0,0,0,0.25);
-
-        border:
-            1px solid rgba(255,255,255,0.2);
-
-        font-size: 13px;
-
-        font-weight: 700;
-
-        letter-spacing: 1px;
-    }}
-
-
-    /* ======================================================
-       SECTION HEADINGS
-       ====================================================== */
-
-    .section-title {{
-        font-size: 24px;
-
-        font-weight: 800;
-
-        margin-top: 15px;
-        margin-bottom: 18px;
-
-        border-left:
-            5px solid {F1_RED};
-
-        padding-left: 12px;
-    }}
-
-
-    /* ======================================================
-       KPI CARDS
-       ====================================================== */
-
-    .kpi-card {{
-        background:
-            linear-gradient(
-                145deg,
-                #1c1c1c,
-                #101010
-            );
-
-        border-radius: 18px;
-
-        padding: 22px;
-
-        min-height: 135px;
-
-        border:
-            1px solid rgba(255,255,255,0.08);
-
-        box-shadow:
-            0 10px 25px rgba(0,0,0,0.35);
-
-        transition:
-            transform 0.25s ease,
-            border-color 0.25s ease;
-
-        position: relative;
-
-        overflow: hidden;
-    }}
-
-    .kpi-card:hover {{
-        transform: translateY(-5px);
-
-        border-color:
-            rgba(225,6,0,0.7);
-    }}
-
-    .kpi-card::after {{
-        content: "";
-
-        position: absolute;
-
-        width: 80px;
-        height: 80px;
-
-        right: -25px;
-        bottom: -25px;
-
-        background:
-            rgba(225,6,0,0.12);
-
-        border-radius: 50%;
-    }}
-
-    .kpi-icon {{
-        font-size: 25px;
-    }}
-
-    .kpi-title {{
-        color: {F1_GREY};
-
-        font-size: 13px;
-
-        margin-top: 5px;
-
-        text-transform: uppercase;
-
-        letter-spacing: 1px;
-    }}
-
-    .kpi-value {{
-        font-size: 32px;
-
-        font-weight: 900;
-
-        margin-top: 5px;
-
-        color: white;
-    }}
-
-
-    /* ======================================================
-       SIDEBAR
-       ====================================================== */
-
-    section[data-testid="stSidebar"] {{
-        background:
-            linear-gradient(
-                180deg,
-                #080808,
-                #111111
-            );
-
-        border-right:
-            1px solid rgba(255,255,255,0.08);
-    }}
-
-    section[data-testid="stSidebar"] h1,
-    section[data-testid="stSidebar"] h2,
-    section[data-testid="stSidebar"] h3 {{
-        color: white;
-    }}
-
-    section[data-testid="stSidebar"] label {{
-        color: #dddddd !important;
-    }}
-
-
-    /* ======================================================
-       SELECTBOX
-       ====================================================== */
-
-    div[data-baseweb="select"] > div {{
-        background-color: #1b1b1b;
-
-        border:
-            1px solid #333;
-
-        border-radius: 10px;
-    }}
-
-
-    /* ======================================================
-       TABS
-       ====================================================== */
-
-    button[data-baseweb="tab"] {{
-        color: #bbbbbb;
-
-        font-weight: 700;
-
-        font-size: 15px;
-    }}
-
-    button[data-baseweb="tab"][aria-selected="true"] {{
-        color: white;
-    }}
-
-    div[data-baseweb="tab-highlight"] {{
-        background-color: {F1_RED};
-    }}
-
-
-    /* ======================================================
-       METRIC
-       ====================================================== */
-
-    div[data-testid="stMetric"] {{
-        background:
-            linear-gradient(
-                145deg,
-                #1c1c1c,
-                #111111
-            );
-
-        padding: 15px;
-
-        border-radius: 15px;
-
-        border:
-            1px solid rgba(255,255,255,0.08);
-    }}
-
-    div[data-testid="stMetricLabel"] {{
-        color: #aaa !important;
-    }}
-
-    div[data-testid="stMetricValue"] {{
-        color: white !important;
-    }}
-
-
-    /* ======================================================
-       BUTTONS
-       ====================================================== */
-
-    .stButton > button {{
-        background:
-            linear-gradient(
-                90deg,
-                {F1_RED},
-                {F1_RED_DARK}
-            );
-
-        color: white;
-
-        border: none;
-
-        border-radius: 10px;
-
-        font-weight: 700;
-
-        padding: 10px 20px;
-    }}
-
-    .stButton > button:hover {{
-        background: #ff1b14;
-
-        color: white;
-    }}
-
-
-    /* ======================================================
-       DATAFRAME
-       ====================================================== */
-
-    div[data-testid="stDataFrame"] {{
-        border-radius: 15px;
-
-        overflow: hidden;
-
-        border:
-            1px solid #333;
-    }}
-
-
-    /* ======================================================
-       FOOTER
-       ====================================================== */
-
-    .footer {{
-        text-align: center;
-
-        color: #777;
-
-        padding-top: 25px;
-
-        font-size: 13px;
-    }}
-
-    .footer strong {{
-        color: {F1_RED};
-    }}
-
-    </style>
-    """,
+    '<div class="main-title">🏎️ Formula 1 — 2025 Analytics</div>',
     unsafe_allow_html=True
 )
 
-
-# ============================================================
-# HERO HEADER
-# ============================================================
-
 st.markdown(
-    """
-    <div class="hero">
-
-        <div class="hero-title">
-            🏎️ FORMULA 1
-        </div>
-
-        <div class="hero-subtitle">
-            2025 Racing Analytics & Championship Intelligence
-        </div>
-
-        <div class="season-badge">
-            🔴 2025 SEASON • LIVE DATA • RACE ANALYTICS
-        </div>
-
-    </div>
-    """,
+    '<div class="subtitle">'
+    'Explore drivers, races, teams and championship performance'
+    '</div>',
     unsafe_allow_html=True
 )
 
@@ -480,16 +93,17 @@ BASE_URL = "https://api.jolpi.ca/ergast/f1/2025"
 
 
 # ============================================================
-# LOAD DATA
+# LOAD F1 DATA
 # ============================================================
 
-@st.cache_data(
-    ttl=86400,
-    show_spinner=False
-)
+@st.cache_data(ttl=86400, show_spinner=False)
 def load_f1_data():
 
     all_results = []
+
+    # --------------------------------------------------------
+    # Get 2025 race schedule
+    # --------------------------------------------------------
 
     schedule_url = (
         f"{BASE_URL}/races.json?limit=100"
@@ -513,6 +127,10 @@ def load_f1_data():
 
     if not races:
         return pd.DataFrame()
+
+    # --------------------------------------------------------
+    # Load each race
+    # --------------------------------------------------------
 
     for race in races:
 
@@ -652,9 +270,19 @@ def load_f1_data():
                     )
                 })
 
-        except Exception:
+        except requests.RequestException as error:
 
-            continue
+            print(
+                f"Could not load "
+                f"{race_name}: {error}"
+            )
+
+        except Exception as error:
+
+            print(
+                f"Unexpected error in "
+                f"{race_name}: {error}"
+            )
 
     return pd.DataFrame(
         all_results
@@ -668,7 +296,7 @@ def load_f1_data():
 try:
 
     with st.spinner(
-        "🏎️ Loading Formula 1 race data..."
+        "🏎️ Loading 2025 Formula 1 data..."
     ):
 
         df = load_f1_data()
@@ -679,19 +307,22 @@ except Exception as error:
         "❌ Unable to load F1 data."
     )
 
-    st.exception(error)
+    st.warning(
+        "Please check your internet connection "
+        "or try again later."
+    )
 
     st.stop()
 
 
 # ============================================================
-# VALIDATION
+# VALIDATE DATA
 # ============================================================
 
 if df.empty:
 
     st.error(
-        "❌ No Formula 1 data available."
+        "❌ No race data was returned."
     )
 
     st.stop()
@@ -721,71 +352,51 @@ df["Laps"] = pd.to_numeric(
 # SIDEBAR
 # ============================================================
 
-st.sidebar.markdown(
-    """
-    <h1 style="
-        text-align:center;
-        font-size:28px;
-        margin-bottom:5px;
-    ">
-        🏎️ F1 ANALYTICS
-    </h1>
-
-    <p style="
-        text-align:center;
-        color:#999;
-        font-size:13px;
-    ">
-        2025 Championship Dashboard
-    </p>
-    """,
-    unsafe_allow_html=True
-)
-
-st.sidebar.markdown("---")
-
-st.sidebar.markdown(
-    "### 🎛️ Race Filters"
-)
+st.sidebar.title("🎛️ Dashboard Filters")
 
 st.sidebar.caption(
-    "Use the filters below to explore the championship."
+    "Select filters to explore the 2025 F1 season."
 )
 
+
+# ------------------------------------------------------------
+# RACE
+# ------------------------------------------------------------
 
 venues = sorted(
-    df["Venue"]
-    .dropna()
-    .unique()
+    df["Venue"].dropna().unique()
 )
-
-drivers = sorted(
-    df["Driver"]
-    .dropna()
-    .unique()
-)
-
-teams = sorted(
-    df["Team"]
-    .dropna()
-    .unique()
-)
-
 
 selected_venue = st.sidebar.selectbox(
-    "🏁 Race",
+    "🏁 Select Race",
     ["All Races"] + list(venues)
 )
 
 
+# ------------------------------------------------------------
+# DRIVER
+# ------------------------------------------------------------
+
+drivers = sorted(
+    df["Driver"].dropna().unique()
+)
+
 selected_driver = st.sidebar.selectbox(
-    "👤 Driver",
+    "👤 Select Driver",
     ["All Drivers"] + list(drivers)
 )
 
 
+# ------------------------------------------------------------
+# TEAM
+# ------------------------------------------------------------
+
+teams = sorted(
+    df["Team"].dropna().unique()
+)
+
 selected_team = st.sidebar.selectbox(
-    "🏢 Team",
+    "🏢 Select Team",
     ["All Teams"] + list(teams)
 )
 
@@ -822,14 +433,12 @@ if selected_team != "All Teams":
 
 
 # ============================================================
-# KPI
+# KPI SECTION
 # ============================================================
 
 st.markdown(
-    '<div class="section-title">📊 Season Overview</div>',
-    unsafe_allow_html=True
+    "### 📊 Season Overview"
 )
-
 
 total_races = df["Venue"].nunique()
 
@@ -837,7 +446,7 @@ total_drivers = df["Driver"].nunique()
 
 total_teams = df["Team"].nunique()
 
-total_points = filtered_df[
+filtered_points = filtered_df[
     "Points"
 ].sum()
 
@@ -850,19 +459,12 @@ with col1:
     st.markdown(
         f"""
         <div class="kpi-card">
-
-            <div class="kpi-icon">
-                🏁
-            </div>
-
             <div class="kpi-title">
-                Total Races
+                🏁 Total Races
             </div>
-
             <div class="kpi-value">
                 {total_races}
             </div>
-
         </div>
         """,
         unsafe_allow_html=True
@@ -874,19 +476,12 @@ with col2:
     st.markdown(
         f"""
         <div class="kpi-card">
-
-            <div class="kpi-icon">
-                👤
-            </div>
-
             <div class="kpi-title">
-                Drivers
+                👤 Drivers
             </div>
-
             <div class="kpi-value">
                 {total_drivers}
             </div>
-
         </div>
         """,
         unsafe_allow_html=True
@@ -898,19 +493,12 @@ with col3:
     st.markdown(
         f"""
         <div class="kpi-card">
-
-            <div class="kpi-icon">
-                🏢
-            </div>
-
             <div class="kpi-title">
-                Constructors
+                🏢 Teams
             </div>
-
             <div class="kpi-value">
                 {total_teams}
             </div>
-
         </div>
         """,
         unsafe_allow_html=True
@@ -922,19 +510,12 @@ with col4:
     st.markdown(
         f"""
         <div class="kpi-card">
-
-            <div class="kpi-icon">
-                🏆
-            </div>
-
             <div class="kpi-title">
-                Selected Points
+                🏆 Selected Points
             </div>
-
             <div class="kpi-value">
-                {total_points:.1f}
+                {filtered_points:.1f}
             </div>
-
         </div>
         """,
         unsafe_allow_html=True
@@ -947,10 +528,10 @@ with col4:
 
 tab1, tab2, tab3, tab4 = st.tabs(
     [
-        "🏆 CHAMPIONSHIP",
-        "🏁 RACE ANALYSIS",
-        "👤 DRIVER PERFORMANCE",
-        "📋 RACE RESULTS"
+        "🏆 Championship",
+        "🏁 Race Analysis",
+        "👤 Driver Performance",
+        "📋 Race Results"
     ]
 )
 
@@ -961,177 +542,26 @@ tab1, tab2, tab3, tab4 = st.tabs(
 
 with tab1:
 
-    st.markdown(
-        '<div class="section-title">'
-        '🏆 Driver Championship'
-        '</div>',
-        unsafe_allow_html=True
+    st.subheader(
+        "🏆 2025 Driver Championship"
     )
-
 
     standings = (
         df
-        .groupby(
-            "Driver",
-            as_index=False
-        )["Points"]
+        .groupby("Driver")["Points"]
         .sum()
         .sort_values(
-            "Points",
             ascending=False
         )
+        .reset_index()
     )
-
 
     standings["Rank"] = range(
         1,
         len(standings) + 1
     )
 
-
-    # --------------------------------------------------------
-    # TOP 3
-    # --------------------------------------------------------
-
-    top3 = standings.head(3)
-
-
-    p1, p2, p3 = st.columns(3)
-
-
-    for index, col in enumerate(
-        [p1, p2, p3]
-    ):
-
-        if index < len(top3):
-
-            row = top3.iloc[index]
-
-            rank = int(row["Rank"])
-
-            driver = row["Driver"]
-
-            points = row["Points"]
-
-
-            medal = {
-                1: "🥇",
-                2: "🥈",
-                3: "🥉"
-            }.get(
-                rank,
-                "🏆"
-            )
-
-
-            with col:
-
-                st.markdown(
-                    f"""
-                    <div class="kpi-card"
-                         style="text-align:center;">
-
-                        <div style="
-                            font-size:40px;
-                        ">
-                            {medal}
-                        </div>
-
-                        <div style="
-                            font-size:18px;
-                            font-weight:800;
-                        ">
-                            {driver}
-                        </div>
-
-                        <div style="
-                            color:#aaa;
-                            margin-top:5px;
-                        ">
-                            Championship P{rank}
-                        </div>
-
-                        <div style="
-                            font-size:28px;
-                            font-weight:900;
-                            color:{F1_RED};
-                            margin-top:8px;
-                        ">
-                            {points:.0f} PTS
-                        </div>
-
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-
-    st.markdown("")
-
-
-    # --------------------------------------------------------
-    # CHAMPIONSHIP CHART
-    # --------------------------------------------------------
-
-    chart_data = standings.sort_values(
-        "Points",
-        ascending=True
-    )
-
-
-    fig = px.bar(
-        chart_data,
-        x="Points",
-        y="Driver",
-        orientation="h",
-        text="Points",
-        color="Points",
-        color_continuous_scale=[
-            "#3b0000",
-            "#8b0000",
-            "#E10600",
-            "#ff3b30"
-        ]
-    )
-
-
-    fig.update_traces(
-        texttemplate="%{text:.0f}",
-        textposition="outside",
-        hovertemplate=(
-            "<b>%{y}</b><br>"
-            "Points: %{x}<extra></extra>"
-        )
-    )
-
-
-    fig.update_layout(
-        title="2025 Championship Points",
-        height=650,
-        template="plotly_dark",
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        coloraxis_showscale=False,
-        margin=dict(
-            l=20,
-            r=50,
-            t=70,
-            b=20
-        )
-    )
-
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-
-    # --------------------------------------------------------
-    # TABLE
-    # --------------------------------------------------------
-
-    display_standings = standings[
+    standings = standings[
         [
             "Rank",
             "Driver",
@@ -1139,22 +569,42 @@ with tab1:
         ]
     ]
 
+    chart_data = standings.sort_values(
+        "Points",
+        ascending=True
+    )
+
+    fig = px.bar(
+        chart_data,
+        x="Points",
+        y="Driver",
+        orientation="h",
+        text="Points",
+        title="Driver Championship Points"
+    )
+
+    fig.update_traces(
+        texttemplate="%{text:.0f}",
+        textposition="outside"
+    )
+
+    fig.update_layout(
+        height=700
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    st.subheader(
+        "📋 Championship Standings"
+    )
 
     st.dataframe(
-        display_standings,
+        standings,
         use_container_width=True,
-        hide_index=True,
-        column_config={
-            "Rank": st.column_config.NumberColumn(
-                "🏆 Rank",
-                format="%d"
-            ),
-            "Driver": "👤 Driver",
-            "Points": st.column_config.NumberColumn(
-                "⭐ Points",
-                format="%.1f"
-            )
-        }
+        hide_index=True
     )
 
 
@@ -1164,27 +614,17 @@ with tab1:
 
 with tab2:
 
-    st.markdown(
-        '<div class="section-title">'
-        '🏁 Race Analysis'
-        '</div>',
-        unsafe_allow_html=True
+    st.subheader(
+        "🏁 Race Analysis"
     )
-
-
-    # --------------------------------------------------------
-    # DRIVER RACE POINTS
-    # --------------------------------------------------------
 
     if selected_venue == "All Races":
 
         race_points = (
             df
-            .groupby(
-                "Driver",
-                as_index=False
-            )["Points"]
+            .groupby("Driver")["Points"]
             .sum()
+            .reset_index()
             .sort_values(
                 "Points",
                 ascending=False
@@ -1202,11 +642,9 @@ with tab2:
                 df["Venue"]
                 == selected_venue
             ]
-            .groupby(
-                "Driver",
-                as_index=False
-            )["Points"]
+            .groupby("Driver")["Points"]
             .sum()
+            .reset_index()
             .sort_values(
                 "Points",
                 ascending=False
@@ -1223,32 +661,18 @@ with tab2:
         x="Driver",
         y="Points",
         text="Points",
-        color="Points",
-        color_continuous_scale=[
-            "#420000",
-            "#A30000",
-            "#E10600",
-            "#ff4d45"
-        ]
+        title=chart_title
     )
-
 
     fig.update_traces(
         texttemplate="%{text:.1f}",
         textposition="outside"
     )
 
-
     fig.update_layout(
-        title=chart_title,
-        template="plotly_dark",
-        height=550,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        coloraxis_showscale=False,
-        xaxis_tickangle=-45
+        xaxis_tickangle=-45,
+        height=600
     )
-
 
     st.plotly_chart(
         fig,
@@ -1257,62 +681,41 @@ with tab2:
 
 
     # --------------------------------------------------------
-    # TEAM CHAMPIONSHIP
+    # TEAM ANALYSIS
     # --------------------------------------------------------
 
-    st.markdown(
-        '<div class="section-title">'
-        '🏢 Constructor Championship'
-        '</div>',
-        unsafe_allow_html=True
+    st.subheader(
+        "🏢 Constructor Championship"
     )
-
 
     team_points = (
         df
-        .groupby(
-            "Team",
-            as_index=False
-        )["Points"]
+        .groupby("Team")["Points"]
         .sum()
+        .reset_index()
         .sort_values(
             "Points",
             ascending=False
         )
     )
 
-
     fig2 = px.bar(
         team_points,
         x="Team",
         y="Points",
         text="Points",
-        color="Points",
-        color_continuous_scale=[
-            "#320000",
-            "#780000",
-            "#E10600",
-            "#ff5b55"
-        ]
+        title="Constructor Championship"
     )
 
-
     fig2.update_traces(
-        texttemplate="%{text:.0f}",
+        texttemplate="%{text:.1f}",
         textposition="outside"
     )
 
-
     fig2.update_layout(
-        title="Constructor Championship",
-        template="plotly_dark",
-        height=500,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        coloraxis_showscale=False,
-        xaxis_tickangle=-35
+        xaxis_tickangle=-45,
+        height=550
     )
-
 
     st.plotly_chart(
         fig2,
@@ -1326,18 +729,14 @@ with tab2:
 
 with tab3:
 
-    st.markdown(
-        '<div class="section-title">'
-        '👤 Driver Performance'
-        '</div>',
-        unsafe_allow_html=True
+    st.subheader(
+        "👤 Driver Performance"
     )
-
 
     if selected_driver == "All Drivers":
 
         performance_driver = st.selectbox(
-            "Select Driver",
+            "Select a Driver",
             drivers,
             key="performance_driver"
         )
@@ -1347,13 +746,11 @@ with tab3:
         performance_driver = selected_driver
 
 
-    driver_df = (
-        df[
-            df["Driver"]
-            == performance_driver
-        ]
-        .sort_values("Round")
-        .copy()
+    driver_df = df[
+        df["Driver"]
+        == performance_driver
+    ].sort_values(
+        "Round"
     )
 
 
@@ -1365,22 +762,18 @@ with tab3:
         "Points"
     ].sum()
 
-
     race_count = driver_df[
         "Venue"
     ].nunique()
-
 
     average_points = driver_df[
         "Points"
     ].mean()
 
-
     valid_positions = (
         driver_df["Position"]
         .dropna()
     )
-
 
     if not valid_positions.empty:
 
@@ -1401,18 +794,15 @@ with tab3:
         f"{driver_points:.1f}"
     )
 
-
     c2.metric(
         "🏁 Races",
         race_count
     )
 
-
     c3.metric(
-        "📊 Avg Points",
+        "📊 Average Points",
         f"{average_points:.1f}"
     )
-
 
     c4.metric(
         "🥇 Best Finish",
@@ -1425,47 +815,28 @@ with tab3:
 
 
     # --------------------------------------------------------
-    # POINTS CHART
+    # POINTS BY RACE
     # --------------------------------------------------------
 
     st.markdown(
-        "### 📈 Points Progression"
+        "### 📈 Points by Race"
     )
 
-
-    fig = px.area(
+    fig = px.line(
         driver_df,
         x="Venue",
         y="Points",
-        markers=True
-    )
-
-
-    fig.update_traces(
-        line=dict(
-            color=F1_RED,
-            width=4
-        ),
-        marker=dict(
-            size=8,
-            color=F1_RED
-        ),
-        fillcolor="rgba(225,6,0,0.18)"
-    )
-
-
-    fig.update_layout(
+        markers=True,
         title=(
             f"{performance_driver} — "
             "Points by Race"
-        ),
-        template="plotly_dark",
-        height=500,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        xaxis_tickangle=-45
+        )
     )
 
+    fig.update_layout(
+        xaxis_tickangle=-45,
+        height=550
+    )
 
     st.plotly_chart(
         fig,
@@ -1474,56 +845,36 @@ with tab3:
 
 
     # --------------------------------------------------------
-    # POSITION CHART
+    # FINISHING POSITION
     # --------------------------------------------------------
 
     st.markdown(
         "### 🏁 Finishing Position"
     )
 
-
     position_df = driver_df.dropna(
         subset=["Position"]
     )
-
 
     fig2 = px.line(
         position_df,
         x="Venue",
         y="Position",
-        markers=True
-    )
-
-
-    fig2.update_traces(
-        line=dict(
-            color=F1_YELLOW,
-            width=3
-        ),
-        marker=dict(
-            size=9,
-            color=F1_YELLOW
+        markers=True,
+        title=(
+            f"{performance_driver} — "
+            "Finishing Position"
         )
     )
-
 
     fig2.update_yaxes(
         autorange="reversed"
     )
 
-
     fig2.update_layout(
-        title=(
-            f"{performance_driver} — "
-            "Race Finishing Position"
-        ),
-        template="plotly_dark",
-        height=500,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        xaxis_tickangle=-45
+        xaxis_tickangle=-45,
+        height=550
     )
-
 
     st.plotly_chart(
         fig2,
@@ -1532,18 +883,14 @@ with tab3:
 
 
 # ============================================================
-# TAB 4 — RACE RESULTS
+# TAB 4 — RESULTS
 # ============================================================
 
 with tab4:
 
-    st.markdown(
-        '<div class="section-title">'
-        '📋 Race Results'
-        '</div>',
-        unsafe_allow_html=True
+    st.subheader(
+        "📋 Race Results"
     )
-
 
     result_columns = [
         "Round",
@@ -1551,132 +898,66 @@ with tab4:
         "Driver",
         "Team",
         "Position",
-        "Grid",
         "Points",
         "Laps",
         "Status"
     ]
 
-
-    results = (
-        filtered_df[
-            result_columns
+    results = filtered_df[
+        result_columns
+    ].sort_values(
+        [
+            "Round",
+            "Position"
         ]
-        .sort_values(
-            [
-                "Round",
-                "Position"
-            ]
-        )
     )
 
-
-    st.info(
-        f"🏎️ Showing "
-        f"**{len(results):,}** race results"
+    st.write(
+        f"Showing **{len(results):,} results**"
     )
-
 
     st.dataframe(
         results,
         use_container_width=True,
-        hide_index=True,
-        height=600,
-        column_config={
-
-            "Round": st.column_config.NumberColumn(
-                "🏁 Round"
-            ),
-
-            "Venue": "🏆 Grand Prix",
-
-            "Driver": "👤 Driver",
-
-            "Team": "🏢 Team",
-
-            "Position": st.column_config.NumberColumn(
-                "📍 Position"
-            ),
-
-            "Grid": st.column_config.NumberColumn(
-                "🚦 Grid"
-            ),
-
-            "Points": st.column_config.NumberColumn(
-                "⭐ Points",
-                format="%.1f"
-            ),
-
-            "Laps": st.column_config.NumberColumn(
-                "🔄 Laps"
-            ),
-
-            "Status": "📊 Status"
-        }
+        hide_index=True
     )
 
 
 # ============================================================
-# SIDEBAR EXPORT
+# DOWNLOAD
 # ============================================================
 
 st.sidebar.markdown("---")
 
-st.sidebar.markdown(
-    "### 📥 Export Data"
+st.sidebar.subheader(
+    "📥 Export"
 )
-
 
 csv_data = filtered_df.to_csv(
     index=False
 ).encode("utf-8")
 
-
 st.sidebar.download_button(
     label="⬇️ Download CSV",
     data=csv_data,
-    file_name="F1_2025_Analytics.csv",
-    mime="text/csv",
-    use_container_width=True
+    file_name="f1_2025_results.csv",
+    mime="text/csv"
 )
-
-
-# ============================================================
-# REFRESH
-# ============================================================
-
-st.sidebar.markdown("---")
-
-
-if st.sidebar.button(
-    "🔄 Refresh F1 Data",
-    use_container_width=True
-):
-
-    st.cache_data.clear()
-
-    st.rerun()
 
 
 # ============================================================
 # FOOTER
 # ============================================================
 
+st.markdown("---")
+
 st.markdown(
     """
-    <div class="footer">
-
-        🏎️ <strong>FORMULA 1 ANALYTICS</strong>
-
-        <br><br>
-
-        2025 Championship Dashboard
-
-        <br>
-
+    <div style="text-align:center;color:#777;">
+        🏎️ F1 2025 Analytics Dashboard<br>
         Built with Streamlit • Pandas • Plotly
-
     </div>
     """,
     unsafe_allow_html=True
 )
+Please make this more attractive and colourfull with F1 backgroud
