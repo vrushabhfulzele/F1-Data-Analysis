@@ -1,11 +1,26 @@
 import streamlit as st
-import fastf1
 import pandas as pd
 import plotly.express as px
 
-# ============================================================
-# PAGE CONFIG
-# ============================================================
+# ---------------------------------------------------------
+# FastF1 import
+# ---------------------------------------------------------
+
+try:
+    import fastf1
+except Exception as e:
+    st.error("❌ FastF1 could not be loaded.")
+    st.code(str(e))
+    st.info(
+        "Please check that requirements.txt contains a current "
+        "FastF1 version and redeploy the application."
+    )
+    st.stop()
+
+
+# ---------------------------------------------------------
+# Page configuration
+# ---------------------------------------------------------
 
 st.set_page_config(
     page_title="F1 Racing Analytics",
@@ -14,251 +29,223 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ============================================================
-# FASTF1 CACHE
-# ============================================================
+
+# ---------------------------------------------------------
+# FastF1 cache
+# ---------------------------------------------------------
 
 fastf1.Cache.enable_cache("fastf1_cache")
 
 
-# ============================================================
-# CUSTOM CSS
-# ============================================================
+# ---------------------------------------------------------
+# CSS
+# ---------------------------------------------------------
 
-st.markdown("""
-<style>
+st.markdown(
+    """
+    <style>
 
-@import url(
-'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&display=swap'
-);
-
-html, body, [class*="css"] {
-    font-family: 'Orbitron', sans-serif;
-}
-
-.stApp {
-    background:
-        radial-gradient(
-            circle at top right,
-            rgba(225, 6, 0, 0.18),
-            transparent 35%
-        ),
-        radial-gradient(
-            circle at bottom left,
-            rgba(225, 6, 0, 0.10),
-            transparent 30%
-        ),
-        #080808;
-
-    color: white;
-}
-
-/* Sidebar */
-
-section[data-testid="stSidebar"] {
-    background: linear-gradient(
-        180deg,
-        #0b0b0b,
-        #151515
+    @import url(
+        'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&display=swap'
     );
 
-    border-right: 1px solid #292929;
-}
+    .stApp {
+        background:
+            radial-gradient(
+                circle at top right,
+                rgba(225, 6, 0, 0.18),
+                transparent 35%
+            ),
+            radial-gradient(
+                circle at bottom left,
+                rgba(225, 6, 0, 0.10),
+                transparent 30%
+            ),
+            #080808;
+        color: white;
+    }
 
-/* Hero */
+    html, body, [class*="css"] {
+        font-family: 'Orbitron', sans-serif;
+    }
 
-.hero {
-    background:
-        linear-gradient(
-            135deg,
-            rgba(225,6,0,0.95),
-            rgba(15,15,15,0.96)
-        );
+    section[data-testid="stSidebar"] {
+        background: #0d0d0d;
+        border-right: 1px solid #292929;
+    }
 
-    padding: 35px;
+    .hero {
+        padding: 35px;
+        border-radius: 20px;
+        margin-bottom: 25px;
 
-    border-radius: 20px;
+        background:
+            linear-gradient(
+                135deg,
+                rgba(225,6,0,0.95),
+                rgba(15,15,15,0.97)
+            );
 
-    margin-bottom: 25px;
+        border: 1px solid #3a3a3a;
 
-    border: 1px solid #3b3b3b;
+        box-shadow:
+            0 15px 40px rgba(0,0,0,0.55);
+    }
 
-    box-shadow:
-        0 15px 45px rgba(0,0,0,0.6);
-}
+    .hero-title {
+        font-size: 44px;
+        font-weight: 800;
+        letter-spacing: 4px;
+    }
 
-.hero-title {
-    font-size: 44px;
+    .hero-subtitle {
+        margin-top: 8px;
+        color: #dddddd;
+        font-size: 14px;
+        letter-spacing: 1px;
+    }
 
-    font-weight: 800;
+    .badge {
+        display: inline-block;
+        margin-top: 18px;
+        padding: 8px 16px;
+        border-radius: 20px;
+        background: #111111;
+        border: 1px solid #444444;
+        font-size: 11px;
+    }
 
-    letter-spacing: 4px;
+    .section-title {
+        margin-top: 28px;
+        margin-bottom: 18px;
+        padding-left: 12px;
 
-    color: white;
-}
+        border-left: 4px solid #e10600;
 
-.hero-subtitle {
-    font-size: 15px;
+        font-size: 21px;
+        font-weight: 700;
+    }
 
-    color: #dddddd;
+    .kpi {
+        padding: 20px;
+        min-height: 115px;
 
-    margin-top: 8px;
+        border-radius: 14px;
 
-    letter-spacing: 1px;
-}
+        background:
+            linear-gradient(
+                145deg,
+                #181818,
+                #0b0b0b
+            );
 
-.hero-badge {
-    display: inline-block;
+        border: 1px solid #2d2d2d;
+        border-left: 4px solid #e10600;
 
-    margin-top: 18px;
+        box-shadow:
+            0 8px 25px rgba(0,0,0,0.35);
+    }
 
-    padding: 8px 18px;
+    .kpi-label {
+        color: #888888;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
 
-    background: #111111;
+    .kpi-value {
+        margin-top: 8px;
+        font-size: 28px;
+        font-weight: 800;
+    }
 
-    border: 1px solid #444;
+    .kpi-description {
+        margin-top: 5px;
+        color: #666666;
+        font-size: 10px;
+    }
 
-    border-radius: 30px;
+    .footer {
+        margin-top: 40px;
+        padding: 25px;
 
-    font-size: 12px;
-}
+        text-align: center;
 
-/* Section headings */
+        color: #666666;
 
-.section-title {
-    font-size: 21px;
+        border-top: 1px solid #222222;
 
-    font-weight: 700;
+        font-size: 11px;
+    }
 
-    margin-top: 28px;
-
-    margin-bottom: 18px;
-
-    border-left: 4px solid #e10600;
-
-    padding-left: 12px;
-}
-
-/* KPI */
-
-.kpi-card {
-    background:
-        linear-gradient(
-            145deg,
-            #171717,
-            #0b0b0b
-        );
-
-    border: 1px solid #2d2d2d;
-
-    border-left: 4px solid #e10600;
-
-    border-radius: 15px;
-
-    padding: 20px;
-
-    min-height: 125px;
-
-    box-shadow:
-        0 8px 25px rgba(0,0,0,0.4);
-
-    transition: 0.3s;
-}
-
-.kpi-card:hover {
-    transform: translateY(-5px);
-
-    box-shadow:
-        0 12px 35px rgba(225,6,0,0.25);
-}
-
-.kpi-title {
-    font-size: 11px;
-
-    color: #999;
-
-    text-transform: uppercase;
-
-    letter-spacing: 1px;
-}
-
-.kpi-value {
-    font-size: 29px;
-
-    font-weight: 800;
-
-    margin-top: 8px;
-
-    color: white;
-}
-
-.kpi-subtitle {
-    font-size: 10px;
-
-    color: #777;
-
-    margin-top: 5px;
-}
-
-/* Footer */
-
-.footer {
-    text-align: center;
-
-    color: #666;
-
-    font-size: 11px;
-
-    padding: 30px;
-
-    margin-top: 40px;
-
-    border-top: 1px solid #222;
-}
-
-</style>
-""", unsafe_allow_html=True)
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 
-# ============================================================
-# LOAD F1 DATA
-# ============================================================
+# ---------------------------------------------------------
+# Header
+# ---------------------------------------------------------
 
-@st.cache_data(show_spinner=False)
+st.markdown(
+    """
+    <div class="hero">
+
+        <div class="hero-title">
+            🏎️ FORMULA 1
+        </div>
+
+        <div class="hero-subtitle">
+            2025 RACING ANALYTICS & CHAMPIONSHIP INTELLIGENCE
+        </div>
+
+        <div class="badge">
+            🔴 FASTF1 • STREAMLIT • PLOTLY
+        </div>
+
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+
+# ---------------------------------------------------------
+# Load race data
+# ---------------------------------------------------------
+
+@st.cache_data(
+    ttl=86400,
+    show_spinner=False
+)
 def load_f1_data():
 
     schedule = fastf1.get_event_schedule(2025)
 
+    # Only actual race rounds
     schedule = schedule[
         schedule["RoundNumber"] > 0
     ].copy()
 
-    schedule = schedule[
-        [
-            "RoundNumber",
-            "Country",
-            "Location",
-            "EventDate",
-            "EventName"
-        ]
-    ]
+    all_results = []
 
-    results = []
+    progress = st.progress(
+        0,
+        text="Loading F1 race data..."
+    )
 
-    total_races = len(schedule)
+    total = len(schedule)
 
-    progress = st.progress(0)
-
-    for count, (_, race) in enumerate(
+    for counter, (_, race) in enumerate(
         schedule.iterrows(),
         start=1
     ):
 
-        round_number = int(
-            race["RoundNumber"]
-        )
-
         try:
+
+            round_number = int(
+                race["RoundNumber"]
+            )
 
             session = fastf1.get_session(
                 2025,
@@ -272,12 +259,12 @@ def load_f1_data():
                 messages=False
             )
 
-            race_results = session.results
+            results = session.results
 
-            if race_results.empty:
+            if results is None or results.empty:
                 continue
 
-            required_columns = [
+            wanted_columns = [
                 "DriverNumber",
                 "Abbreviation",
                 "FullName",
@@ -291,180 +278,145 @@ def load_f1_data():
 
             available_columns = [
                 column
-                for column in required_columns
-                if column in race_results.columns
+                for column in wanted_columns
+                if column in results.columns
             ]
 
-            race_results = race_results[
+            results = results[
                 available_columns
             ].copy()
 
-            race_results["Round"] = round_number
+            results["Round"] = round_number
 
-            race_results["Venue"] = race[
+            results["Venue"] = race[
                 "Location"
             ]
 
-            race_results["Country"] = race[
+            results["Country"] = race[
                 "Country"
             ]
 
-            race_results["EventName"] = race[
+            results["EventName"] = race[
                 "EventName"
             ]
 
-            race_results["EventDate"] = race[
+            results["EventDate"] = race[
                 "EventDate"
             ]
 
-            results.append(
-                race_results
-            )
+            all_results.append(results)
 
         except Exception:
-            pass
+            # Continue if one race fails
+            continue
 
         progress.progress(
-            count / total_races
+            counter / total,
+            text=f"Loading race {counter} of {total}"
         )
 
     progress.empty()
 
-    if not results:
-
+    if not all_results:
         return pd.DataFrame()
 
-    final = pd.concat(
-        results,
+    data = pd.concat(
+        all_results,
         ignore_index=True
     )
 
-    # Numeric conversions
+    # -----------------------------------------------------
+    # Clean columns
+    # -----------------------------------------------------
 
-    final["Position"] = pd.to_numeric(
-        final["Position"],
+    data["Position"] = pd.to_numeric(
+        data["Position"],
         errors="coerce"
     )
 
-    final["Points"] = pd.to_numeric(
-        final["Points"],
+    data["Points"] = pd.to_numeric(
+        data["Points"],
         errors="coerce"
     ).fillna(0)
 
-    final["Laps"] = pd.to_numeric(
-        final["Laps"],
+    data["Laps"] = pd.to_numeric(
+        data["Laps"],
         errors="coerce"
     ).fillna(0)
 
-    final["EventDate"] = pd.to_datetime(
-        final["EventDate"],
+    data["Round"] = pd.to_numeric(
+        data["Round"],
         errors="coerce"
     )
 
-    final = final.sort_values(
+    data["EventDate"] = pd.to_datetime(
+        data["EventDate"],
+        errors="coerce"
+    )
+
+    return data.sort_values(
         ["Round", "Position"]
     )
 
-    return final
 
-
-# ============================================================
-# HERO
-# ============================================================
-
-st.markdown("""
-<div class="hero">
-
-    <div class="hero-title">
-        🏎️ FORMULA 1
-    </div>
-
-    <div class="hero-subtitle">
-        2025 RACING ANALYTICS & CHAMPIONSHIP INTELLIGENCE
-    </div>
-
-    <div class="hero-badge">
-        🔴 FASTF1 • LIVE-STYLE ANALYTICS • PERFORMANCE DATA
-    </div>
-
-</div>
-""", unsafe_allow_html=True)
-
-
-# ============================================================
-# LOAD DATA
-# ============================================================
+# ---------------------------------------------------------
+# Get data
+# ---------------------------------------------------------
 
 with st.spinner(
-    "🏁 Loading 2025 Formula 1 race data..."
+    "🏁 Preparing the 2025 championship..."
 ):
 
-    final = load_f1_data()
+    df = load_f1_data()
 
 
-if final.empty:
+if df.empty:
 
     st.error(
-        """
-        ❌ No Formula 1 data could be loaded.
-
-        Please check your internet connection and
-        restart the Streamlit application.
-        """
+        "❌ No F1 race data was returned."
     )
 
     st.stop()
 
 
-# ============================================================
-# SIDEBAR
-# ============================================================
+# ---------------------------------------------------------
+# Sidebar
+# ---------------------------------------------------------
 
-st.sidebar.markdown(
-    "# 🏎️ F1 CONTROL CENTER"
+st.sidebar.title(
+    "🏎️ F1 CONTROL CENTER"
 )
 
 st.sidebar.markdown("---")
 
 
-# Driver filter
-
 drivers = sorted(
-    final["FullName"]
+    df["FullName"]
     .dropna()
     .unique()
+    .tolist()
 )
+
+teams = sorted(
+    df["TeamName"]
+    .dropna()
+    .unique()
+    .tolist()
+)
+
+venues = (
+    df[
+        ["Round", "Venue"]
+    ]
+    .drop_duplicates()
+    .sort_values("Round")["Venue"]
+    .tolist()
+)
+
 
 selected_driver = st.sidebar.selectbox(
     "👤 Driver",
     ["All Drivers"] + drivers
-)
-
-
-# Race filter
-
-races = (
-    final[
-        ["Round", "Venue", "EventName"]
-    ]
-    .drop_duplicates()
-    .sort_values("Round")
-)
-
-venues = races["Venue"].tolist()
-
-selected_venue = st.sidebar.selectbox(
-    "🏁 Race",
-    ["All Races"] + venues
-)
-
-
-# Team filter
-
-teams = sorted(
-    final["TeamName"]
-    .dropna()
-    .unique()
 )
 
 selected_team = st.sidebar.selectbox(
@@ -472,87 +424,95 @@ selected_team = st.sidebar.selectbox(
     ["All Teams"] + teams
 )
 
+selected_venue = st.sidebar.selectbox(
+    "🏁 Race",
+    ["All Races"] + venues
+)
 
-# ============================================================
-# FILTER DATA
-# ============================================================
 
-filtered = final.copy()
+# ---------------------------------------------------------
+# Filters
+# ---------------------------------------------------------
+
+filtered_df = df.copy()
+
 
 if selected_driver != "All Drivers":
 
-    filtered = filtered[
-        filtered["FullName"]
+    filtered_df = filtered_df[
+        filtered_df["FullName"]
         == selected_driver
     ]
 
-if selected_venue != "All Races":
-
-    filtered = filtered[
-        filtered["Venue"]
-        == selected_venue
-    ]
 
 if selected_team != "All Teams":
 
-    filtered = filtered[
-        filtered["TeamName"]
+    filtered_df = filtered_df[
+        filtered_df["TeamName"]
         == selected_team
     ]
 
 
-# ============================================================
-# KPI CALCULATIONS
-# ============================================================
+if selected_venue != "All Races":
 
-total_races = final["Round"].nunique()
+    filtered_df = filtered_df[
+        filtered_df["Venue"]
+        == selected_venue
+    ]
 
-total_drivers = final["FullName"].nunique()
 
-total_teams = final["TeamName"].nunique()
+# ---------------------------------------------------------
+# KPI calculations
+# ---------------------------------------------------------
 
-total_points = filtered["Points"].sum()
+race_count = df["Round"].nunique()
+
+driver_count = df["FullName"].nunique()
+
+team_count = df["TeamName"].nunique()
+
+points = filtered_df["Points"].sum()
 
 wins = (
-    filtered["Position"] == 1
+    filtered_df["Position"] == 1
 ).sum()
 
 podiums = (
-    filtered["Position"] <= 3
+    filtered_df["Position"] <= 3
 ).sum()
 
 
-# ============================================================
-# KPI SECTION
-# ============================================================
+# ---------------------------------------------------------
+# KPI cards
+# ---------------------------------------------------------
 
 st.markdown(
-    '<div class="section-title">📊 Season Overview</div>',
+    '<div class="section-title">📊 Championship Overview</div>',
     unsafe_allow_html=True
 )
 
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
 
-def kpi_card(
-    title,
+def create_kpi(
+    label,
     value,
-    subtitle
+    description
 ):
 
     return f"""
-    <div class="kpi-card">
+    <div class="kpi">
 
-        <div class="kpi-title">
-            {title}
+        <div class="kpi-label">
+            {label}
         </div>
 
         <div class="kpi-value">
             {value}
         </div>
 
-        <div class="kpi-subtitle">
-            {subtitle}
+        <div class="kpi-description">
+            {description}
         </div>
 
     </div>
@@ -562,9 +522,9 @@ def kpi_card(
 with c1:
 
     st.markdown(
-        kpi_card(
+        create_kpi(
             "Races",
-            total_races,
+            race_count,
             "2025 Season"
         ),
         unsafe_allow_html=True
@@ -574,9 +534,9 @@ with c1:
 with c2:
 
     st.markdown(
-        kpi_card(
+        create_kpi(
             "Drivers",
-            total_drivers,
+            driver_count,
             "Participants"
         ),
         unsafe_allow_html=True
@@ -586,9 +546,9 @@ with c2:
 with c3:
 
     st.markdown(
-        kpi_card(
+        create_kpi(
             "Teams",
-            total_teams,
+            team_count,
             "Constructors"
         ),
         unsafe_allow_html=True
@@ -598,10 +558,10 @@ with c3:
 with c4:
 
     st.markdown(
-        kpi_card(
+        create_kpi(
             "Points",
-            f"{total_points:.0f}",
-            "Selected Filter"
+            f"{points:.0f}",
+            "Current Filter"
         ),
         unsafe_allow_html=True
     )
@@ -610,10 +570,10 @@ with c4:
 with c5:
 
     st.markdown(
-        kpi_card(
+        create_kpi(
             "Wins",
             wins,
-            "Race Victories"
+            "Victories"
         ),
         unsafe_allow_html=True
     )
@@ -622,26 +582,26 @@ with c5:
 with c6:
 
     st.markdown(
-        kpi_card(
+        create_kpi(
             "Podiums",
             podiums,
-            "Top 3 Finishes"
+            "Top 3"
         ),
         unsafe_allow_html=True
     )
 
 
-# ============================================================
-# CHAMPIONSHIP LEADERBOARD
-# ============================================================
+# ---------------------------------------------------------
+# Championship leaderboard
+# ---------------------------------------------------------
 
 st.markdown(
-    '<div class="section-title">🏆 Championship Leaderboard</div>',
+    '<div class="section-title">🏆 Driver Championship</div>',
     unsafe_allow_html=True
 )
 
 leaderboard = (
-    final
+    df
     .groupby(
         ["FullName", "TeamName"],
         as_index=False
@@ -680,44 +640,39 @@ leaderboard.insert(
 )
 
 leaderboard["Points"] = (
-    leaderboard["Points"]
-    .round(0)
+    leaderboard["Points"].round(0)
 )
 
 st.dataframe(
     leaderboard,
     use_container_width=True,
     hide_index=True,
-    height=420
+    height=400
 )
 
 
-# ============================================================
-# TOP DRIVERS + TEAMS
-# ============================================================
+# ---------------------------------------------------------
+# Top drivers and teams
+# ---------------------------------------------------------
 
 col1, col2 = st.columns(2)
 
 
-# ============================================================
-# TOP DRIVERS
-# ============================================================
-
 with col1:
 
     st.markdown(
-        '<div class="section-title">🥇 Top Drivers</div>',
+        '<div class="section-title">🥇 Top 10 Drivers</div>',
         unsafe_allow_html=True
     )
 
-    top_drivers = (
+    top = (
         leaderboard
         .head(10)
         .sort_values("Points")
     )
 
     fig = px.bar(
-        top_drivers,
+        top,
         x="Points",
         y="FullName",
         orientation="h",
@@ -729,17 +684,15 @@ with col1:
         ]
     )
 
-    fig.update_traces(
-        textposition="outside"
-    )
-
     fig.update_layout(
         template="plotly_dark",
         height=450,
         paper_bgcolor="#080808",
-        plot_bgcolor="#080808",
-        xaxis_title="Championship Points",
-        yaxis_title=""
+        plot_bgcolor="#080808"
+    )
+
+    fig.update_traces(
+        textposition="outside"
     )
 
     st.plotly_chart(
@@ -748,19 +701,15 @@ with col1:
     )
 
 
-# ============================================================
-# TEAM PERFORMANCE
-# ============================================================
-
 with col2:
 
     st.markdown(
-        '<div class="section-title">🏢 Constructor Performance</div>',
+        '<div class="section-title">🏢 Constructor Standings</div>',
         unsafe_allow_html=True
     )
 
-    team_points = (
-        final
+    constructor = (
+        df
         .groupby(
             "TeamName",
             as_index=False
@@ -771,31 +720,26 @@ with col2:
             ascending=False
         )
         .head(10)
-    )
-
-    team_points = team_points.sort_values(
-        "Points"
+        .sort_values("Points")
     )
 
     fig = px.bar(
-        team_points,
+        constructor,
         x="Points",
         y="TeamName",
         orientation="h",
         text="Points"
     )
 
-    fig.update_traces(
-        textposition="outside"
-    )
-
     fig.update_layout(
         template="plotly_dark",
         height=450,
         paper_bgcolor="#080808",
-        plot_bgcolor="#080808",
-        xaxis_title="Points",
-        yaxis_title=""
+        plot_bgcolor="#080808"
+    )
+
+    fig.update_traces(
+        textposition="outside"
     )
 
     st.plotly_chart(
@@ -804,36 +748,36 @@ with col2:
     )
 
 
-# ============================================================
-# DRIVER ANALYTICS
-# ============================================================
+# ---------------------------------------------------------
+# Driver analysis
+# ---------------------------------------------------------
 
 st.markdown(
-    '<div class="section-title">👤 Driver Analytics</div>',
+    '<div class="section-title">👤 Driver Performance</div>',
     unsafe_allow_html=True
 )
 
 if selected_driver == "All Drivers":
 
-    analysis_driver = drivers[0]
+    driver_for_analysis = drivers[0]
 
 else:
 
-    analysis_driver = selected_driver
+    driver_for_analysis = selected_driver
 
 
-driver_data = final[
-    final["FullName"]
-    == analysis_driver
+driver_df = df[
+    df["FullName"]
+    == driver_for_analysis
 ].copy()
 
 
-# ============================================================
-# DRIVER POINTS
-# ============================================================
+# ---------------------------------------------------------
+# Driver points progression
+# ---------------------------------------------------------
 
 fig = px.line(
-    driver_data.sort_values("Round"),
+    driver_df.sort_values("Round"),
     x="Round",
     y="Points",
     markers=True,
@@ -842,16 +786,14 @@ fig = px.line(
         "Position",
         "TeamName"
     ],
-    title=f"{analysis_driver} — Race Points"
+    title=f"{driver_for_analysis} — Race Points"
 )
 
 fig.update_layout(
     template="plotly_dark",
     height=450,
     paper_bgcolor="#080808",
-    plot_bgcolor="#080808",
-    xaxis_title="Race Round",
-    yaxis_title="Points"
+    plot_bgcolor="#080808"
 )
 
 st.plotly_chart(
@@ -860,9 +802,9 @@ st.plotly_chart(
 )
 
 
-# ============================================================
-# RACE PERFORMANCE
-# ============================================================
+# ---------------------------------------------------------
+# Race performance
+# ---------------------------------------------------------
 
 col1, col2 = st.columns(2)
 
@@ -875,9 +817,9 @@ with col1:
     )
 
     race_points = (
-        final
+        df
         .groupby(
-            ["Venue", "Round"],
+            ["Round", "Venue"],
             as_index=False
         )["Points"]
         .sum()
@@ -913,7 +855,7 @@ with col2:
     )
 
     fig = px.line(
-        driver_data.sort_values("Round"),
+        driver_df.sort_values("Round"),
         x="Round",
         y="Position",
         markers=True,
@@ -931,9 +873,7 @@ with col2:
         template="plotly_dark",
         height=500,
         paper_bgcolor="#080808",
-        plot_bgcolor="#080808",
-        xaxis_title="Race Round",
-        yaxis_title="Finishing Position"
+        plot_bgcolor="#080808"
     )
 
     st.plotly_chart(
@@ -942,65 +882,60 @@ with col2:
     )
 
 
-# ============================================================
-# RACE ANALYSIS
-# ============================================================
+# ---------------------------------------------------------
+# Selected race
+# ---------------------------------------------------------
 
 st.markdown(
-    '<div class="section-title">🏁 Race Analysis</div>',
+    '<div class="section-title">🏁 Race Results</div>',
     unsafe_allow_html=True
 )
 
 if selected_venue != "All Races":
 
-    race_data = final[
-        final["Venue"]
+    race_df = df[
+        df["Venue"]
         == selected_venue
     ].copy()
 
-    race_data = race_data.sort_values(
+    race_df = race_df.sort_values(
         "Position"
     )
 
-    race_info = race_data.iloc[0]
+    info = race_df.iloc[0]
 
     r1, r2, r3, r4 = st.columns(4)
 
     with r1:
-
         st.metric(
             "🏁 Circuit",
-            race_info["Venue"]
+            info["Venue"]
         )
 
     with r2:
-
         st.metric(
             "🌍 Country",
-            race_info["Country"]
+            info["Country"]
         )
 
     with r3:
 
-        race_date = pd.to_datetime(
-            race_info["EventDate"]
+        date = pd.to_datetime(
+            info["EventDate"]
         )
 
         st.metric(
             "📅 Date",
-            race_date.strftime(
-                "%d %b %Y"
-            )
+            date.strftime("%d %b %Y")
         )
 
     with r4:
-
         st.metric(
             "🏆 Winner",
-            race_data.iloc[0]["FullName"]
+            race_df.iloc[0]["FullName"]
         )
 
-    race_display = race_data[
+    race_table = race_df[
         [
             "Position",
             "FullName",
@@ -1009,10 +944,10 @@ if selected_venue != "All Races":
             "Points",
             "Laps"
         ]
-    ]
+    ].copy()
 
     st.dataframe(
-        race_display,
+        race_table,
         use_container_width=True,
         hide_index=True,
         height=450
@@ -1021,38 +956,38 @@ if selected_venue != "All Races":
 else:
 
     st.info(
-        "👈 Select a race from the sidebar "
-        "to see detailed race results."
+        "👈 Select a specific race from the sidebar "
+        "to view its results."
     )
 
 
-# ============================================================
-# DRIVER COMPARISON
-# ============================================================
+# ---------------------------------------------------------
+# Driver comparison
+# ---------------------------------------------------------
 
 st.markdown(
     '<div class="section-title">⚔️ Driver Comparison</div>',
     unsafe_allow_html=True
 )
 
-compare_drivers = st.multiselect(
-    "Select drivers",
+comparison_drivers = st.multiselect(
+    "Select drivers to compare",
     drivers,
     default=drivers[:2]
 )
 
-if len(compare_drivers) >= 2:
+if len(comparison_drivers) >= 2:
 
-    comparison = final[
-        final["FullName"].isin(
-            compare_drivers
+    comparison = df[
+        df["FullName"].isin(
+            comparison_drivers
         )
     ]
 
     comparison = (
         comparison
         .groupby(
-            ["FullName", "Round"],
+            ["Round", "FullName"],
             as_index=False
         )["Points"]
         .sum()
@@ -1063,8 +998,7 @@ if len(compare_drivers) >= 2:
         x="Round",
         y="Points",
         color="FullName",
-        markers=True,
-        title="Driver Points Comparison"
+        markers=True
     )
 
     fig.update_layout(
@@ -1082,37 +1016,40 @@ if len(compare_drivers) >= 2:
 else:
 
     st.warning(
-        "Please select at least two drivers."
+        "Select at least two drivers."
     )
 
 
-# ============================================================
-# RAW DATA
-# ============================================================
+# ---------------------------------------------------------
+# Raw data
+# ---------------------------------------------------------
 
 with st.expander("🔍 View Raw F1 Data"):
 
     st.dataframe(
-        filtered,
+        filtered_df,
         use_container_width=True,
         hide_index=True
     )
 
 
-# ============================================================
-# FOOTER
-# ============================================================
+# ---------------------------------------------------------
+# Footer
+# ---------------------------------------------------------
 
-st.markdown("""
-<div class="footer">
+st.markdown(
+    """
+    <div class="footer">
 
-🏎️ <b>FORMULA 1 RACING ANALYTICS</b>
-<br><br>
+        🏎️ <b>FORMULA 1 RACING ANALYTICS</b>
+        <br><br>
 
-2025 Formula 1 Performance Dashboard
-<br>
+        2025 Championship Dashboard
+        <br>
 
-Built with Streamlit • FastF1 • Pandas • Plotly
+        Built with Streamlit • FastF1 • Pandas • Plotly
 
-</div>
-""", unsafe_allow_html=True)
+    </div>
+    """,
+    unsafe_allow_html=True
+)
