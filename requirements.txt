@@ -1,5 +1,6 @@
-streamlit
-fastf1
-numpy
 pandas
+numpy
+matplotlib
+streamlit
+seaborn
 plotly
